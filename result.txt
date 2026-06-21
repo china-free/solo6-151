@@ -1,0 +1,2 @@
+﻿UnicodeEncodeError: 'gbk' codec can't encode character '\u2b22' in position 20
+2: illegal multibyte sequence
