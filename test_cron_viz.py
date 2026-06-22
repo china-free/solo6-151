@@ -25,17 +25,94 @@ class TestCronParser(unittest.TestCase):
         self.assertIn("周三", desc)
         self.assertIn("下午", desc)
         self.assertIn("2", desc)
-        self.assertIn("30", desc)
+        self.assertIn("半", desc)
 
     def test_human_readable_every_15_minutes(self):
         expr = CronParser.parse("*/15 * * * *")
         desc = CronParser.to_human_readable(expr)
-        self.assertIn("15", desc)
+        self.assertIn("每15分钟", desc)
 
     def test_human_readable_workday_morning(self):
         expr = CronParser.parse("0 8 * * 1-5")
         desc = CronParser.to_human_readable(expr)
         self.assertTrue("工作日" in desc or "周一" in desc)
+        self.assertIn("上午8点", desc)
+        self.assertIn("整", desc)
+
+    def test_human_readable_step_with_range(self):
+        expr = CronParser.parse("10-30/5 * * * *")
+        desc = CronParser.to_human_readable(expr)
+        self.assertIn("10-30分", desc)
+        self.assertIn("每5分钟", desc)
+
+    def test_human_readable_list_minutes(self):
+        expr = CronParser.parse("1,3,5 * * * *")
+        desc = CronParser.to_human_readable(expr)
+        self.assertIn("1分", desc)
+        self.assertIn("3分", desc)
+        self.assertIn("5分", desc)
+
+    def test_human_readable_step_hours(self):
+        expr = CronParser.parse("0 */6 * * *")
+        desc = CronParser.to_human_readable(expr)
+        self.assertIn("每6小时", desc)
+        self.assertIn("整点", desc)
+
+    def test_human_readable_step_range_hours(self):
+        expr = CronParser.parse("0 8-18/2 * * *")
+        desc = CronParser.to_human_readable(expr)
+        self.assertIn("上午8", desc)
+        self.assertIn("下午6", desc)
+        self.assertIn("每2小时", desc)
+
+    def test_human_readable_list_hours(self):
+        expr = CronParser.parse("0 1,3,5 * * *")
+        desc = CronParser.to_human_readable(expr)
+        self.assertIn("凌晨1点", desc)
+        self.assertIn("凌晨3点", desc)
+        self.assertIn("凌晨5点", desc)
+
+    def test_human_readable_list_dow(self):
+        expr = CronParser.parse("0 8 * * 1,3,5")
+        desc = CronParser.to_human_readable(expr)
+        self.assertIn("周一", desc)
+        self.assertIn("周三", desc)
+        self.assertIn("周五", desc)
+
+    def test_human_readable_complex_combined(self):
+        expr = CronParser.parse("*/5 */2 * * *")
+        desc = CronParser.to_human_readable(expr)
+        self.assertIn("每2小时", desc)
+        self.assertIn("每5分钟", desc)
+
+    def test_describe_minute_step_all(self):
+        self.assertEqual(CronParser.describe_minute("*/15"), "每15分钟")
+        self.assertEqual(CronParser.describe_minute("*/5"), "每5分钟")
+
+    def test_describe_minute_step_range(self):
+        self.assertEqual(CronParser.describe_minute("10-30/5"), "10-30分每5分钟")
+        self.assertEqual(CronParser.describe_minute("0-10/2"), "0-10分每2分钟")
+
+    def test_describe_minute_list(self):
+        self.assertEqual(CronParser.describe_minute("0,30"), "整点和半点")
+        self.assertEqual(CronParser.describe_minute("1,3,5"), "1分、3分、5分")
+        self.assertEqual(CronParser.describe_minute("0,15,30,45"), "每刻钟")
+
+    def test_describe_hour_step_all(self):
+        self.assertEqual(CronParser.describe_hour("*/2"), "每2小时")
+        self.assertEqual(CronParser.describe_hour("*/6"), "每6小时")
+
+    def test_describe_hour_step_range(self):
+        result = CronParser.describe_hour("8-18/2")
+        self.assertIn("上午8", result)
+        self.assertIn("下午6", result)
+        self.assertIn("每2小时", result)
+
+    def test_describe_hour_list(self):
+        result = CronParser.describe_hour("1,3,5")
+        self.assertIn("凌晨1点", result)
+        self.assertIn("凌晨3点", result)
+        self.assertIn("凌晨5点", result)
 
     def test_parse_field_values(self):
         values = CronParser._parse_field_values("*/15", 0, 59)
